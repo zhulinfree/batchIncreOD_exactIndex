@@ -12,8 +12,8 @@ public class Index {
 
 	//	public ArrayList<DataStruct> objList=new ArrayList<>();
 	public ArrayList<EquiClass<InstanceKey>> ECIndexList=new ArrayList<>();
-	public HashMap<ArrayList<String>,Integer> indexMap=new HashMap<>(); 
-	public HashMap<Integer,ArrayList<String>> recforIndex=new HashMap<>();
+	public HashMap<OrderDependency,Integer> indexMap=new HashMap<>(); 
+	public HashMap<Integer,OrderDependency> recforIndex=new HashMap<>();
 	private int tn=0;//tn表示当前建立索引树的数目
 	public boolean debug;
 	public Index(){
@@ -21,26 +21,27 @@ public class Index {
 	}
 	
 	
-	public EquiClass<InstanceKey> buildIndex(ArrayList<String> indexList,ArrayList<String> rhs) {	
+	public EquiClass<InstanceKey> buildIndex(OrderDependency od) {	
+		
 		if(debug) {
 			System.out.print("building Index in ");
-			for(String s:indexList) System.out.print(s+" ");
+			for(String s:od.getLHS()) System.out.print(s+" ");
 			System.out.println();
 		}
 		ArrayList<DataStruct> objList=DataInitial.objectList;
-		EquiClass<InstanceKey> index=new EquiClass<InstanceKey>(indexList,rhs);
+		EquiClass<InstanceKey> index=new EquiClass<InstanceKey>(od.getLHS(),od.getRHS());
 		for (int i=0;i< objList.size();i++) {
 			DataStruct temp= objList.get(i);
-			index.addTupleforOriginData(new InstanceKey(indexList,temp),i);
+			index.addTupleforOriginData(new InstanceKey(od.getLHS(),temp),i);
 		}
 		
-		indexMap.put(indexList,tn);
-		recforIndex.put(tn++,indexList);
+		indexMap.put(od,tn);
+		recforIndex.put(tn++,od);
 		return index;
 	}
 	public void buildIndexes(ArrayList<OrderDependency> ods) {
 		for(OrderDependency nod:ods) {
-			ECIndexList.add(buildIndex(nod.getLHS(),nod.getRHS()));
+			ECIndexList.add(buildIndex(nod));
 		}
 		//return ECIndexList;
 	}
@@ -60,7 +61,7 @@ public class Index {
 		//对于索引中每一个等价类都做更新
 		for(OrderDependency od:odList) {
 			ArrayList<DataStruct> iObjList=DataInitial.iObjectList;
-			EquiClass<InstanceKey> tmp_ind=ECIndexList.get(indexMap.get(od.getLHS()));
+			EquiClass<InstanceKey> tmp_ind=ECIndexList.get(indexMap.get(od));
 			for(int tid=0;tid<iObjList.size();tid++) {
 				InstanceKey key=new InstanceKey(tmp_ind.getAttrName(),iObjList.get(tid));
 				tmp_ind.addTupleforIncreData(key, tid);
@@ -107,6 +108,20 @@ public class Index {
 		}
 	}
 
-
 	
+	public void printIndex() {
+		System.out.println("所有的索引为");
+		for(int i=0;i<tn;i++) {
+			System.out.print("LHS: ");
+			printList(ECIndexList.get(i).getAttrName());
+			System.out.print("RHS: ");
+			printList(ECIndexList.get(i).getRHSName());
+			System.out.println("-------");
+		}
+	}
+
+	private void printList(ArrayList<String> list) {
+		for(String s:list) System.out.print(s+" ");
+		System.out.println();
+	}
 }

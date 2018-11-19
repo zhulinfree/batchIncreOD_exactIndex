@@ -1,0 +1,12 @@
+E->D
+F->D
+D->E
+F->E
+D->F
+E->F
+D->F,G
+E->F,G
+E->D,G
+F->D,G
+D->E,G
+F->E,G

@@ -1,0 +1,33 @@
+OriginAirportSeqID->OriginAirportID
+Origin->OriginAirportID
+OriginAirportID->OriginAirportSeqID
+Origin->OriginAirportSeqID
+OriginAirportID->Origin
+OriginAirportSeqID->Origin
+
+
+5->4
+6->4
+4->5
+6->5
+4->6
+5->6
+
+
+E->D
+F->D
+D->E
+F->E
+D->F
+E->F
+
+6双 294->293   ,33訳��split
+291->290   11訳
+291->290    3訳
+
+146->147  20訳
+140->141 62訳
+81->80  49訳
+
+30->31  * 25
+30->29  * 5

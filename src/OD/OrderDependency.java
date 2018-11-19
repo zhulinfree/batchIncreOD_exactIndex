@@ -1,6 +1,9 @@
 package OD;
 import java.util.ArrayList;
 
+import BplusTree.InstanceKey;
+import Data.Cmp;
+
 public class OrderDependency {
 	private ArrayList<String> LHS=new ArrayList<String>(),RHS=new ArrayList<String>();
 	static final String lr_separator="->";
@@ -112,6 +115,39 @@ public class OrderDependency {
 		}
 		return false;
 	}
+	
+	
+	 @Override
+    public boolean equals(Object o)
+    {
+        if(this == o)
+        {
+            return true;
+        }
+        if(!(o instanceof InstanceKey))
+        {
+            return false;
+        }
+        OrderDependency pn = (OrderDependency)o;
+        
+		return this.isEqual(pn);
+    }
+
+	    @Override
+	    public int hashCode()
+	    {
+	       int result=0;
+	       for(int i=0;i<LHS.size();i++) {
+	    	   result+=LHS.get(i).hashCode();
+	       }
+	       
+	       for(int i=0;i<RHS.size();i++) {
+	    	   result+=RHS.get(i).hashCode();
+	       }
+	       return result;
+	    }
+	
+	
 	public void printOD() {
 		System.out.print(LHS.get(0));
 		for(int i=1;i<LHS.size();i++) {

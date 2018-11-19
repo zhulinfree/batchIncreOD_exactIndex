@@ -28,64 +28,57 @@ public class Handle {
 	
 	//有swap直接减属性解决
 	public String detectOD(int ecid) {
-		boolean swap=false,split=false;
+		boolean split=false;
 		
 		//int ecid=getECId(od.getLHS());
 		EquiClass<InstanceKey> ec=inds.ECIndexList.get(ecid);
-		long sum=0;
 		
 		for(Entry<ArrayList<Integer>,Boolean> entry: ec.changedECBlock.entrySet()){
         	//对每一个等价类，找到他的pre和next
-			ArrayList<Integer> keyList=entry.getKey();
-//			if(debug) {
-//				System.out.print("cmp key:");
-//				printList(keyList);
-//			}
-			
-			
-			long ts = System.currentTimeMillis( );
+			ArrayList<Integer> keyList=entry.getKey();		
         	
 			InstanceKey key=new InstanceKey(ec.getAttrName(),keyList);
     		ECValues cur=ec.getCur(key);
     		ECValues pre=ec.getPre(key);
     		ECValues next=ec.getNext(key);
     		
-    		long te = System.currentTimeMillis( );
-    		sum+=(te-ts);
     		
-    		if(!swap&&compare(cur.getMax(),cur.getMin(),ec.getRHSName())!=0) {
+    		
+    		if(compare(cur.getMax(),cur.getMin(),ec.getRHSName())!=0) {
     			 split=true;
     			 ec.splitECBlock.put(key.getKeyData(),new ECValues(cur));
     			 
     		}
     		
     		//pre_max<cur_min,cur_max<next_min
-    		while(ec.getRHSName().size()>0&&(pre!=null&&compare(pre.getMax(),cur.getMin(),ec.getRHSName())>0||next!=null&&compare(cur.getMax(),next.getMin(),ec.getRHSName())>0)) {
-    			ec.removeRHSTail();
-    			swap=true;
+    		if(pre!=null&&compare(pre.getMax(),cur.getMin(),ec.getRHSName())>0||next!=null&&compare(cur.getMax(),next.getMin(),ec.getRHSName())>0) {
+    			//ec.removeRHSTail();
+    			
     			ec.splitECBlock.clear();
+    			return "swap";
     		}	
         }
 		
-		ReadandCheck.dtime+=sum;
-		if(Debug.time_test) System.out.println(ec.changedECBlock.size()+"个等价类查找需要时间="+sum+"ms");
 		
-		if(ec.getRHSName().size()==0) return "invalid";
 		
-		//swap会导致split，所以还需要重新确认下是否是真的spit还是已经解决了
-		if(swap) {
-			split=false;
-			//ec.splitECBlock.clear();
-			for(Entry<ArrayList<Integer>,Boolean> entry: ec.changedECBlock.entrySet()){
-				ArrayList<Integer> keyList=entry.getKey();
-	        	InstanceKey key=new InstanceKey(ec.getAttrName(),keyList);
-	    		ECValues cur=ec.getCur(key);
-	    		if(compare(cur.getMax(),cur.getMin(),ec.getRHSName())!=0) {
-	    			split=true;
-	    			ec.splitECBlock.put(key.getKeyData(),new ECValues(cur));
-	    		}
-			}
-		}
+		//if(Debug.time_test2) System.out.println(ec.changedECBlock.size()+"个等价类查找需要时间="+sum+"ms");
+		
+		//if(ec.getRHSName().size()==0) return "invalid";
+		
+//		//swap会导致split，所以还需要重新确认下是否是真的split还是已经解决了
+//		if(swap) {
+//			split=false;
+//			//ec.splitECBlock.clear();
+//			for(Entry<ArrayList<Integer>,Boolean> entry: ec.changedECBlock.entrySet()){
+//				ArrayList<Integer> keyList=entry.getKey();
+//	        	InstanceKey key=new InstanceKey(ec.getAttrName(),keyList);
+//	    		ECValues cur=ec.getCur(key);
+//	    		if(compare(cur.getMax(),cur.getMin(),ec.getRHSName())!=0) {
+//	    			split=true;
+//	    			ec.splitECBlock.put(key.getKeyData(),new ECValues(cur));
+//	    		}
+//			}
+//		}
 		
 		if(split) return "split";
 		return "valid";

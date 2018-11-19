@@ -22,14 +22,18 @@ public class ReadandCheck {
 			enrichODList=new ArrayList<OrderDependency>();
 	public static long dtime=0;
 	public static long etime=0;
+	private static int incorrect_od_num=0;
+	public static int split_od_num=0;
 	
 public static void main(String[] args) {
 		
 		initial();
 		
 		listClear();
+		
+		if(Debug.debug) indexes.printIndex();
 		/*将读入的od输出*/
-		System.out.println("The original od is:");
+		System.out.println("==================\nThe original od is:(共 "+originalODList.size()+" 条)");
 		for(OrderDependency od:odList) od.printOD();
 		System.out.println("共有"+objectList.size()+"条数据\n共有"+iObjectList.size()+"条增量数据");
 
@@ -38,6 +42,12 @@ public static void main(String[] args) {
 		long start = System.currentTimeMillis();
 		checkandRepair(originalODList);
 		
+		
+		System.out.println("==================\n对等索引");
+		System.out.println("原OD失效 "+incorrect_od_num+" 条");
+		System.out.println("做了Expand的OD数目 "+split_od_num+" 条");
+		incorrect_od_num=0;
+		split_od_num=0;
 		
 		enrichment();
 		
@@ -56,10 +66,9 @@ public static void main(String[] args) {
         diff+=(end-t);
         System.out.println(objectList.size()+"条数据"+iObjectList.size()+"条增量数据 共耗时"+diff+"毫秒");
         System.out.println("其中Detect耗时 "+ dtime+"ms, Expand 耗时"+etime+"ms\n");
-		System.out.println("The last od is:");
-		if(!odList.isEmpty())
+		System.out.println("The last od is:(共 "+odList.size()+" 条)");
+		if(!odList.isEmpty()) 
 			for(OrderDependency od:odList) od.printOD();
-		
 		
 	}
 	
@@ -67,7 +76,7 @@ public static void main(String[] args) {
 		
 		//对于每个等价类
 		for(OrderDependency od:ODLi) {
-			int ecid=getECId(od.getLHS());
+			int ecid=getECId(od);
 			Handle handle=new Handle();
 			
 			long t1 = System.currentTimeMillis( );
@@ -76,40 +85,45 @@ public static void main(String[] args) {
 			
 			
 			long t2 = System.currentTimeMillis( );
-			if(Debug.time_test) {
+			
+			dtime+=(t2-t1);
+			
+			
+			if(Debug.time_test2) {
 				System.out.println("detect");
 				od.printOD();
 				System.out.println("花费"+(t2-t1)+"ms\n");
+				System.out.println("检测结果： "+violation_type+"\n\n------------------");
 			}
 			
 			//boolean not_valid=false;
-			System.out.println("检测结果： "+violation_type+"\n\n------------------");
-			ArrayList<String> new_rhs=indexes.ECIndexList.get(ecid).getRHSName();
-			if(new_rhs.size()!=od.getRHS().size()&&!new_rhs.isEmpty()) {
-				//incorrectODList.add(new OrderDependency(od));
-				//not_valid=true; 
-				od.refreshRHS(new_rhs);
-			}
 			
-			if(violation_type.equals("invalid")) {
-				//if(!not_valid) incorrectODList.add(new OrderDependency(od));
+			//ArrayList<String> new_rhs=indexes.ECIndexList.get(ecid).getRHSName();
+//			if(new_rhs.size()!=od.getRHS().size()&&!new_rhs.isEmpty()) {
+//				//incorrectODList.add(new OrderDependency(od));
+//				//not_valid=true; 
+//				od.refreshRHS(new_rhs);
+//			}
+			
+			if(violation_type.equals("swap")) {
+				incorrect_od_num++;
 				odList.remove(od);
 			}else if(violation_type.equals("split")) {
-				
+				incorrect_od_num++;
+				split_od_num++;
 				long t3 = System.currentTimeMillis( );
 				
 				ArrayList<OrderDependency> res=handle.repairSplit(indexes.ECIndexList.get(ecid).splitECBlock,od);
 				
-				long t4 = System.currentTimeMillis( );
+				long t4 = System.currentTimeMillis();
 				etime+=(t4-t3);
-				if(Debug.time_test) {
+				if(Debug.time_test2) {
 					System.out.println("Expand(split)");
 					od.printOD();
 					System.out.println("花费"+(t4-t3)+"ms\n====================\n");
 				}
 				
-				
-				//if(!not_valid) //只有发生split的时候才进行enrich
+			
 				incorrectODList.add(new OrderDependency(od));
 				odList.remove(od);
 				if(res!=null) {
@@ -171,7 +185,7 @@ public static void main(String[] args) {
 		if(odList!=null) originalODList.addAll(odList);
 		
 	}
-	public static int getECId(ArrayList<String> todo) {
+	public static int getECId(OrderDependency todo) {
 		
 		return indexes.indexMap.getOrDefault(todo,-1);
 		
